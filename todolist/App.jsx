@@ -27,11 +27,11 @@ export default function App() {
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Enter task"
+          placeholder="Введите задачу"
           value={task}
           onChangeText={setTask}
         />
-        <Button title="Add" onPress={addTask} />
+        <Button title="Добавить" onPress={addTask} />
       </View>
       <FlatList
         data={tasks} // Передача данных для отображения
