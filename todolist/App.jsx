@@ -23,7 +23,7 @@ export default function App() {
   return (
     // Основной контейнер приложения
     <View style={styles.container}>
-      <Text style={styles.header}>To-Do List</Text>
+      <Text style={styles.header}>Список Задач</Text>
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
