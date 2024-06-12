@@ -1,0 +1,4 @@
+git clone https://github.com/yourusername/ToDoApp.git
+cd ToDoApp
+npm install
+npx react-native run-android
