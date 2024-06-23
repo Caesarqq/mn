@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, Button, FlatList, TouchableOpacity, Image } from 'react-native';
+import { StyleSheet, Text, View, TextInput, FlatList, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Provider as PaperProvider, Dialog, Portal, TextInput as PaperTextInput } from 'react-native-paper';
+import { Provider as PaperProvider, Dialog, Portal, TextInput as PaperTextInput, IconButton } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, useFocusEffect } from '@react-navigation/native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { launchImageLibrary } from 'react-native-image-picker';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'; 
 
 const Drawer = createDrawerNavigator();
 
@@ -14,6 +15,7 @@ function TaskListScreen() {
   const [tasks, setTasks] = useState([]);
   const [editTask, setEditTask] = useState(null);
   const [editText, setEditText] = useState('');
+  const [searchText, setSearchText] = useState('');
 
   const loadTasks = async () => {
     try {
@@ -77,6 +79,9 @@ function TaskListScreen() {
     });
   };
 
+  // Фильтрация задач на основе текста поиска
+  const filteredTasks = tasks.filter(task => task.value.toLowerCase().includes(searchText.toLowerCase()));
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Привет</Text>
@@ -87,27 +92,52 @@ function TaskListScreen() {
           value={task}
           onChangeText={setTask}
         />
-        <Button title="Добавить" onPress={addTask} />
+        <IconButton
+          icon={() => <MaterialCommunityIcons name="plus" size={28} />}
+          onPress={addTask}
+          color="#1e90ff"
+          style={styles.addButton}
+        />
+      </View>
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Поиск задач"
+          value={searchText}
+          onChangeText={setSearchText}
+        />
       </View>
       <FlatList
-        data={tasks}
+        data={filteredTasks}
         renderItem={({ item }) => (
           <View style={styles.listItem}>
             {item.image && <Image source={{ uri: item.image }} style={styles.image} />}
             <Text style={styles.itemText}>{item.value}</Text>
             <View style={styles.buttonContainer}>
-              <TouchableOpacity onPress={() => selectImage(item.key)}>
-                <Text style={styles.buttonText}>Загрузить изображение</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => completeTask(item.key)}>
-                <Text style={styles.buttonText}>{item.completed ? 'Отменить' : 'Выполнить'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => startEditTask(item)}>
-                <Text style={styles.buttonText}>Редактировать</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => deleteTask(item.key)}>
-                <Text style={styles.buttonText}>Удалить</Text>
-              </TouchableOpacity>
+              <IconButton
+                icon={() => <MaterialCommunityIcons name="image" size={28} />}
+                onPress={() => selectImage(item.key)}
+                color="#ffffff"
+                style={styles.iconButton}
+              />
+              <IconButton
+                icon={() => <MaterialCommunityIcons name={item.completed ? "undo" : "check"} size={28} />}
+                onPress={() => completeTask(item.key)}
+                color="#ffffff"
+                style={styles.iconButton}
+              />
+              <IconButton
+                icon={() => <MaterialCommunityIcons name="pencil" size={28} />}
+                onPress={() => startEditTask(item)}
+                color="#ffffff"
+                style={styles.iconButton}
+              />
+              <IconButton
+                icon={() => <MaterialCommunityIcons name="delete" size={28} />}
+                onPress={() => deleteTask(item.key)}
+                color="#ffffff"
+                style={styles.iconButton}
+              />
             </View>
           </View>
         )}
@@ -115,17 +145,27 @@ function TaskListScreen() {
       />
       <Portal>
         <Dialog visible={editTask !== null} onDismiss={() => setEditTask(null)}>
-          <Dialog.Title>Редактировать задачу</Dialog.Title>
+          <Dialog.Title style={styles.dialogTitle}>Редактировать задачу</Dialog.Title>
           <Dialog.Content>
             <PaperTextInput
               label="Задача"
               value={editText}
               onChangeText={setEditText}
+              style={styles.dialogInput}
+              theme={{ colors: { primary: '#1e90ff' } }}
             />
           </Dialog.Content>
-          <Dialog.Actions>
-            <Button title="Отмена" onPress={() => setEditTask(null)} />
-            <Button title="Сохранить" onPress={saveEditTask} />
+          <Dialog.Actions style={styles.dialogActions}>
+            <IconButton
+              icon={() => <MaterialCommunityIcons name="cancel" size={28} />}
+              onPress={() => setEditTask(null)}
+              color="#1e90ff"
+            />
+            <IconButton
+              icon={() => <MaterialCommunityIcons name="content-save" size={28} />}
+              onPress={saveEditTask}
+              color="#1e90ff"
+            />
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -155,7 +195,7 @@ function CompletedTasksScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Выполненные задачи</Text>
+      <Text style={styles.header}>Привет снова</Text>
       <FlatList
         data={tasks.filter(task => task.completed)}
         renderItem={({ item }) => (
@@ -172,7 +212,17 @@ function CompletedTasksScreen() {
 
 function MyDrawer() {
   return (
-    <Drawer.Navigator>
+    <Drawer.Navigator
+      screenOptions={{
+        drawerStyle: {
+          backgroundColor: '#1e90ff',
+          width: 240,
+        },
+        drawerInactiveTintColor: '#ffffff',
+        drawerActiveTintColor: '#1e90ff',
+        drawerActiveBackgroundColor: '#ffffff',
+      }}
+    >
       <Drawer.Screen name="TaskList" component={TaskListScreen} options={{ title: 'Список Задач' }} />
       <Drawer.Screen name="CompletedTasks" component={CompletedTasksScreen} options={{ title: 'Выполненные задачи' }} />
     </Drawer.Navigator>
@@ -196,12 +246,14 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 50,
     paddingHorizontal: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#f0f8ff',
   },
   header: {
     fontSize: 24,
     marginBottom: 20,
     textAlign: 'center',
+    color: '#1e90ff', 
+    fontWeight: 'bold',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -209,17 +261,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  searchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   input: {
-    borderBottomColor: '#ccc',
-    borderBottomWidth: 1,
+    borderBottomColor: '#1e90ff',
+    borderBottomWidth: 2,
     padding: 10,
     flex: 1,
     marginRight: 10,
+    color: '#1e90ff',
+  },
+  addButton: {
+    backgroundColor: '#ffffff', 
+    borderRadius: 25,
   },
   listItem: {
     padding: 15,
     backgroundColor: '#1e90ff',
-    borderRadius: 6,
+    borderRadius: 10,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -227,23 +290,35 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
   },
   itemText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 20,
     fontWeight: '800',
   },
   buttonContainer: {
-    flexDirection: 'column', // Вертикальное расположение кнопок
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     marginTop: 10,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    marginBottom: 10, // Отступ между кнопками
+  iconButton: {
+    backgroundColor: '#4682b4', 
+    borderRadius: 25,
   },
   image: {
     width: 100,
     height: 100,
     marginBottom: 10,
-    borderRadius: 6,
+    borderRadius: 10,
+  },
+  dialogTitle: {
+    color: '#1e90ff', 
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  dialogInput: {
+    backgroundColor: '#f0f8ff', 
+  },
+  dialogActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
 });
