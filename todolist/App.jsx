@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, FlatList, Image } from 'react-native';
+import { StyleSheet, Text, View, TextInput, FlatList, Image, Platform, Alert, ToastAndroid } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Provider as PaperProvider, Dialog, Portal, TextInput as PaperTextInput, IconButton } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, useFocusEffect } from '@react-navigation/native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { launchImageLibrary } from 'react-native-image-picker';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'; 
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const Drawer = createDrawerNavigator();
 
@@ -24,7 +24,12 @@ function TaskListScreen() {
         setTasks(JSON.parse(storedTasks));
       }
     } catch (error) {
-      console.error('Ошибка', error);
+      console.error('Ошибка при загрузке задач', error);
+      if (Platform.OS === 'android') {
+        ToastAndroid.show("Ошибка при загрузке задач", ToastAndroid.LONG);
+      } else {
+        Alert.alert("Ошибка", "Ошибка при загрузке задач");
+      }
     }
   };
 
@@ -32,7 +37,12 @@ function TaskListScreen() {
     try {
       await AsyncStorage.setItem('tasks', JSON.stringify(tasks));
     } catch (error) {
-      console.error('Ошибка', error);
+      console.error('Ошибка при сохранении задач', error);
+      if (Platform.OS === 'android') {
+        ToastAndroid.show("Ошибка при сохранении задач", ToastAndroid.LONG);
+      } else {
+        Alert.alert("Ошибка", "Ошибка при сохранении задач");
+      }
     }
   };
 
@@ -41,13 +51,25 @@ function TaskListScreen() {
   }, []);
 
   useEffect(() => {
-    saveTasks(tasks);
+    const handler = setTimeout(() => {
+      saveTasks(tasks);
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
   }, [tasks]);
 
   const addTask = () => {
     if (task.length > 0) {
-      setTasks([...tasks, { key: Math.random().toString(), value: task, completed: false, image: null }]);
+      const newTask = { key: Date.now().toString(), value: task, completed: false, image: null };
+      setTasks([...tasks, newTask]);
       setTask('');
+      if (Platform.OS === 'android') {
+        ToastAndroid.show("Задача добавлена", ToastAndroid.SHORT);
+      } else {
+        Alert.alert("Задача добавлена", `Задача добавлена: ${newTask.value}`);
+      }
     }
   };
 
@@ -79,7 +101,6 @@ function TaskListScreen() {
     });
   };
 
-  // Фильтрация задач на основе текста поиска
   const filteredTasks = tasks.filter(task => task.value.toLowerCase().includes(searchText.toLowerCase()));
 
   return (
@@ -183,7 +204,12 @@ function CompletedTasksScreen() {
         setTasks(JSON.parse(storedTasks));
       }
     } catch (error) {
-      console.error('Ошибка', error);
+      console.error('Ошибка при загрузке задач', error);
+      if (Platform.OS === 'android') {
+        ToastAndroid.show("Ошибка при загрузке задач", ToastAndroid.LONG);
+      } else {
+        Alert.alert("Ошибка", "Ошибка при загрузке задач");
+      }
     }
   };
 
@@ -215,11 +241,11 @@ function MyDrawer() {
     <Drawer.Navigator
       screenOptions={{
         drawerStyle: {
-          backgroundColor: '#1e90ff',
+          backgroundColor: Platform.select({ ios: '#ff69b4', android: '#1e90ff' }),
           width: 240,
         },
         drawerInactiveTintColor: '#ffffff',
-        drawerActiveTintColor: '#1e90ff',
+        drawerActiveTintColor: Platform.select({ ios: '#ff69b4', android: '#1e90ff' }), 
         drawerActiveBackgroundColor: '#ffffff',
       }}
     >
@@ -244,15 +270,15 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
+    paddingTop: Platform.select({ ios: 50, android: 30 }), 
     paddingHorizontal: 20,
-    backgroundColor: '#f0f8ff',
+    backgroundColor: Platform.select({ ios: '#ffe4e1', android: '#f0f8ff' }), 
   },
   header: {
     fontSize: 24,
     marginBottom: 20,
     textAlign: 'center',
-    color: '#1e90ff', 
+    color: Platform.select({ ios: '#ff69b4', android: '#1e90ff' }), 
     fontWeight: 'bold',
   },
   inputContainer: {
@@ -268,20 +294,25 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   input: {
-    borderBottomColor: '#1e90ff',
+    borderBottomColor: Platform.select({ ios: '#ff69b4', android: '#1e90ff' }), 
     borderBottomWidth: 2,
     padding: 10,
     flex: 1,
     marginRight: 10,
-    color: '#1e90ff',
+    color: Platform.select({ ios: '#ff69b4', android: '#1e90ff' }), 
   },
   addButton: {
-    backgroundColor: '#ffffff', 
+    backgroundColor: Platform.select({ ios: '#ff69b4', android: '#1e90ff' }), 
     borderRadius: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 3,
+    elevation: 5, 
   },
   listItem: {
     padding: 15,
-    backgroundColor: '#1e90ff',
+    backgroundColor: Platform.select({ ios: '#ffb6c1', android: '#87cefa' }), 
     borderRadius: 10,
     marginBottom: 12,
     shadowColor: '#000',
@@ -300,8 +331,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   iconButton: {
-    backgroundColor: '#4682b4', 
+    backgroundColor: Platform.select({ ios: '#ff69b4', android: '#1e90ff' }), 
     borderRadius: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 3,
+    elevation: 5, 
   },
   image: {
     width: 100,
@@ -310,12 +346,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   dialogTitle: {
-    color: '#1e90ff', 
+    color: Platform.select({ ios: '#ff69b4', android: '#1e90ff' }), 
     textAlign: 'center',
     fontWeight: 'bold',
   },
   dialogInput: {
-    backgroundColor: '#f0f8ff', 
+    backgroundColor: '#f0f8ff',
   },
   dialogActions: {
     flexDirection: 'row',
